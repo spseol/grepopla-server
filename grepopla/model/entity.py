@@ -1,33 +1,38 @@
 from pony.orm.core import PrimaryKey, Required, Optional, Set, sql_debug
 
+from datetime import datetime
 from grepopla.model.database import db
 
 
-class GameObject(db):
+class GameObject(db.Entity):
     _table_ = "game_object"
     id = PrimaryKey(int, auto=True)
-    game = Required("Game")
-    player = Required("Player")
-    action = Optional("Action")
+    game = Required(lambda: Game)
+    player = Required(lambda: Player)
+    action = Optional(unicode, column="json", sql_type="json")
 
 
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     nick = Required(unicode, lazy=False)
     color = Required(unicode, nullable=True)
-    games = Set("Game")
-    objects = Set(GameObject)
+    password = Optional(unicode, nullable=True)
+    logs = Set(lambda: Log)
+    games = Set(lambda: Game)
+    game_objects = Set(GameObject)
 
 
 class Game(db.Entity):
     id = PrimaryKey(int, auto=True)
+    logs = Set(lambda: Log)
     players = Set(Player)
     objects = Set(GameObject)
     active = Required(bool)
+    created = Required(datetime)
 
 
 class Ship(db.GameObject):
-    type = Required("ShipType")
+    type = Required(lambda: ShipType)
 
 
 class ShipType(db.Entity):
@@ -41,11 +46,12 @@ class Planet(db.GameObject):
     pass
 
 
-class Action(db.Entity):
-    _table_ = "action"
+class Log(db.Entity):
+    _table_ = "log"
     id = PrimaryKey(int, auto=True)
-    game_object = Required(GameObject)
-    action = Required(unicode, sql_type="json")
+    received = Required(datetime)
+    game = Required(Game)
+    player = Optional(Player)
 
 
 sql_debug(True)
