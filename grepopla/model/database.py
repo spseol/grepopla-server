@@ -1,6 +1,7 @@
 from pony.orm.core import Database
 
-from grepopla.settings_default import DATABASE
+from grepopla.settings import DATABASE
 
 
-db = Database("postgres", **DATABASE)
+db = Database()
+db.bind("postgres", **DATABASE)
