@@ -1,2 +1,4 @@
 .idea
-settings.py
+/grepopla/settings.py
+grepopla/settings.py
+*.pyc
