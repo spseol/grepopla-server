@@ -10,7 +10,7 @@ class Sockethandler(WebSocketHandler):
         warning('new ws')
 
     def on_close(self):
-        warning('new ws')
+        warning('closed ws')
 
     def on_message(self, message):
         warning('new msg {}'.format(message))
