@@ -1,3 +1,5 @@
+from logging import warning
+
 import tornado.ioloop
 import tornado.web
 from tornado.websocket import WebSocketHandler
@@ -5,12 +7,13 @@ from tornado.websocket import WebSocketHandler
 
 class Sockethandler(WebSocketHandler):
     def open(self):
-        pass
+        warning('new ws')
 
     def on_close(self):
-        pass
+        warning('new ws')
 
     def on_message(self, message):
+        warning('new msg {}'.format(message))
         self.write_message(message)
 
 
