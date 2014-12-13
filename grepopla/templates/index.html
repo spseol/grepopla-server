@@ -3,8 +3,42 @@
 <head lang="cs">
     <meta charset="UTF-8">
     <title>GREPOPLA</title>
+    <script src="//code.jquery.com/jquery-2.1.1.js"></script>
 </head>
 <body>
 <h1>GREPOPLA</h1>
+
+<form>
+    <label for="nick">Nick: <input type="text" name="nick"/></label>
+    <label for="game_id">game_id: <input type="number" name="game_id"/></label>
+    <select name="command">
+        <option value="login">LOGIN</option>
+        <option value="select">SELECT</option>
+        <option value="game">GAME</option>
+    </select>
+    <input type="submit" value="send"/>
+</form>
+<div id="logger"></div>
+
+<script>
+    jQuery(function ($) {
+        ws = new WebSocket('ws://' + window.location.host + '/game');
+        $('form').submit(function (e) {
+            e.preventDefault();
+            var msg = {
+                command: $('select[name=command]').val(),
+                nick: $('input[name=nick]').val(),
+                game_id: $('input[name=game_id]').val()
+            };
+            msg = JSON.stringify(msg);
+            console.log(msg)
+            ws.send(msg);
+        });
+        ws.onmessage = function (e) {
+            var data = e.data;
+            $('div').text(data).prependTo('#logger');
+        }
+    });
+</script>
 </body>
 </html>
