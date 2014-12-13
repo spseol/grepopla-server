@@ -4,12 +4,15 @@ from tornado import web, ioloop, options, autoreload
 
 from tornado.web import StaticFileHandler, url
 
+from grepopla.controllers.GameClient import GameClient
+
 from grepopla.controllers.IndexController import IndexController
 from grepopla.settings import DEVELOPMENT
 
 
 app_params = [
     url(r'/', IndexController),
+    url(r'/game', GameClient),
     url(r'/static/(.*)', StaticFileHandler,
         {"path": ''.join((path.dirname(path.abspath(__file__)), '/../templates/index.html'))})
 ]

@@ -1,4 +1,4 @@
-from pony.orm.core import PrimaryKey, Required, Optional, Set, sql_debug, commit
+from pony.orm.core import PrimaryKey, Required, Optional, Set, sql_debug
 
 from datetime import datetime
 from grepopla.model.database import db
@@ -12,24 +12,20 @@ class GameObject(db.Entity):
     player = Required("Player")
     action = Optional(unicode, column="json")
 
-
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     nick = Required(unicode, lazy=False)
     color = Required(unicode, nullable=True)
-    password = Optional(unicode, nullable=True)
     commands = Set("Command")
     games = Set("Game")
     game_objects = Set(GameObject)
-    email = Required(unicode)
-
 
 class Game(db.Entity):
     id = PrimaryKey(int, auto=True)
     commands = Set("Command")
     players = Set(Player)
     objects = Set(GameObject)
-    active = Required(int)
+    active = Required(bool)
     created = Required(datetime)
 
 
