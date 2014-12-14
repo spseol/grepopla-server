@@ -14,7 +14,8 @@ app_params = [
     url(r'/static/(.*)', StaticFileHandler,
         {"path": ''.join((path.dirname(path.abspath(__file__)), '/../templates/index.html'))})
 ]
-app = Application(app_params, degug=DEVELOPMENT)
+app = Application(app_params, degug=DEVELOPMENT, compiled_template_cache=not DEVELOPMENT,
+                  static_hash_cache=not DEVELOPMENT)
 
 
 @db_session
