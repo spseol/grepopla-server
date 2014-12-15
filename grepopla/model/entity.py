@@ -17,11 +17,11 @@ class GameObject(db.Entity):
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     nick = Required(unicode, lazy=False)
-    color = Required(unicode, nullable=True)
-    password = Optional(unicode, nullable=True)
+    color = Required(unicode)
     commands = Set("Command")
     games = Set("Game")
     game_objects = Set(GameObject)
+    ip_address = Required(unicode)
 
 
 class Game(db.Entity):

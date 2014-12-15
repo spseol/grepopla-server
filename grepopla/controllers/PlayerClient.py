@@ -9,6 +9,7 @@ from tornado.websocket import WebSocketHandler
 
 from grepopla.model.entity import Player, Game
 from datetime import datetime
+from grepopla.settings import DEVELOPMENT
 
 
 MODE_LOGIN = 'login'
@@ -45,12 +46,13 @@ class PlayerClient(WebSocketHandler):
     def on_message(self, message):
         raise NotImplementedError
 
-    def set_player(self, nick):
-        p = Player.get(nick=nick)
+    def set_player(self, nick, ip_address):
+        p = Player.get(nick=nick, ip_address=ip_address)
         if not p:
-            p = Player(nick=nick, color="%06x" % randint(0, 0xFFFFFF))
+            p = Player(nick=nick, ip_address=ip_address, color="%06x" % randint(0, 0xFFFFFF))
         if p.games:
-            raise RuntimeWarning(u'Player {} is already in game!'.format(to_basestring(p.nick)))
+            self.write_message({'error': 1001})
+            raise RuntimeWarning
         self.player = p
         assert isinstance(self.player, Player)
         info(u'Player {} connected!'.format(to_basestring(self.player.nick)))
@@ -58,6 +60,10 @@ class PlayerClient(WebSocketHandler):
     def set_game(self, game_id):
         assert isinstance(self.player, Player)
         g = Game.get(id=game_id)
+        assert isinstance(g, Game)
+        if g.launched_at is not None:
+            self.write_message({'error': 1002})
+            raise RuntimeWarning
         self.game = g
         assert isinstance(self.game, Game)
         self.game.players.add(self.player)
@@ -90,28 +96,23 @@ class PlayerClient(WebSocketHandler):
             warning('Unknown game mode!')
 
     def _on_command_message(self, message):
-        try:
-            message = json_decode(message)
-        except ValueError:
-            warning("Message can't be decoded.")
-            return
+        message = json_decode(message)
 
         command = message.get('command', None)
         command = command if command in MODES else None
-
-        if command == MODE_LOGIN and self.mode == MODE_LOGIN:
-            try:
-                self.set_player(nick=message.get('nick', None))
+        try:
+            if command == MODE_LOGIN and self.mode == MODE_LOGIN:
+                self.set_player(nick=message.get('nick', None), ip_address=self.request.remote_ip)
                 self.mode = MODE_SELECT
                 self.write_game_select()
-            except RuntimeWarning as e:
-                warning(e.message)
-        elif command == MODE_SELECT and self.mode == MODE_SELECT:
-            self.set_game(game_id=int(message.get('game_id', 0)))
-            self.mode = MODE_GAME
-            self.toggle_message_mode(MODE_GAME)
-        else:
-            warning('Unknown command!')
+            elif command == MODE_SELECT and self.mode == MODE_SELECT:
+                self.set_game(game_id=int(message.get('game_id', 0)))
+                self.mode = MODE_GAME
+                self.toggle_message_mode(MODE_GAME)
+            else:
+                warning('Unknown command!')
+        except RuntimeWarning as e:
+            warning(e.message)
 
     def _on_game_message(self, message):
         assert isinstance(self.player, Player)
@@ -119,6 +120,7 @@ class PlayerClient(WebSocketHandler):
         info('GM (player {} in game {}): {}'.format(to_basestring(self.player.nick), self.game.id, message))
 
     def write_message(self, message, binary=False):
-        logging.error(message)
+        if DEVELOPMENT:
+            logging.info('Sent WS message: {}'.format(message))
         return super(PlayerClient, self).write_message(message, binary)
 
