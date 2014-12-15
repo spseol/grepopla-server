@@ -10,6 +10,7 @@ _optional_, **for both directions**, g = game, p = player
 | player_id: 6 |  |
 | games: [{id: 1, players: [Foo, Bar, Joe]}, {id: 2, players: [Too, True, Mrazek]}] | |
 |  | command: select, game_id: 2 |
+| _error: 1002_ | |
 
 ### Pre-start stage
 | to client from server | to server from client |
@@ -25,4 +26,5 @@ _optional_, **for both directions**, g = game, p = player
 ### error codes & messages
 | error code | error message |
 | --- | --- |
-| 1001 | nick foobar has been already used |
+| 1001 | nick has been already used |
+| 1002 | this game has been already started |
