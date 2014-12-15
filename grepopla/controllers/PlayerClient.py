@@ -1,4 +1,5 @@
 from logging import warning
+import logging
 from random import randint
 from logging import info
 
@@ -31,7 +32,6 @@ class PlayerClient(WebSocketHandler):
     def on_close(self):
         if not self.mode == MODE_GAME:
             return
-        self.game.players.remove(self.player)
         warning(u'Player {} in game {} disconnected ({})'.format(to_basestring(self.player.nick), self.game.id,
                                                                  self.close_code))
         commit()
@@ -40,6 +40,7 @@ class PlayerClient(WebSocketHandler):
             print(ship.id)
             # destroy all players ships
             # set to free all player's planets
+        self.game.players.remove(self.player)
 
     def on_message(self, message):
         raise NotImplementedError
@@ -116,3 +117,8 @@ class PlayerClient(WebSocketHandler):
         assert isinstance(self.player, Player)
         assert isinstance(self.game, Game)
         info('GM (player {} in game {}): {}'.format(to_basestring(self.player.nick), self.game.id, message))
+
+    def write_message(self, message, binary=False):
+        logging.error(message)
+        return super(PlayerClient, self).write_message(message, binary)
+
