@@ -12,7 +12,7 @@ app_params = [
     url(r'/', IndexController),
     url(r'/game', PlayerController),
     url(r'/static/(.*)', StaticFileHandler,
-        {"path": ''.join((path.dirname(path.abspath(__file__)), '/../templates/index.html'))})
+        {"path": ''.join((path.dirname(path.abspath(__file__)), '/grepopla/static/'))})
 ]
 app = Application(app_params, debug=DEVELOPMENT, compiled_template_cache=not DEVELOPMENT,
                   static_hash_cache=not DEVELOPMENT)
