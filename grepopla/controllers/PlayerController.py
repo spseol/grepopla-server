@@ -6,7 +6,6 @@ from pony.orm.core import commit
 from tornado.escape import json_decode, to_basestring
 from tornado.websocket import WebSocketHandler
 
-from grepopla.controllers.GameController import GameController
 from grepopla.model.entity import Player, Game
 from datetime import datetime
 from grepopla.settings import DEVELOPMENT
@@ -103,7 +102,8 @@ class PlayerController(WebSocketHandler):
                 self.set_game(game_id=int(message.get('game_id', 0)))
                 self.mode = MODE_GAME
                 self.toggle_message_mode(MODE_GAME)
-                self.game_controller = GameController(self.player, self.game)
+
+                self.game_controller = GameController(self, self.player, self.game)
                 GameController.clients.append(self)
             else:
                 warning('Unknown command!')
@@ -111,15 +111,19 @@ class PlayerController(WebSocketHandler):
             warning(e.message)
 
     def _on_game_message(self, message):
+        message = json_decode(message)
         assert isinstance(self.player, Player)
         assert isinstance(self.game, Game)
+        assert isinstance(self.game_controller, GameController)
         if DEVELOPMENT:
             info('Game message (player {} in game {}): {}'.format(to_basestring(self.player.nick), self.game.id,
                                                                   message))
-        GameController.process_game_message(message)
+        self.game_controller.process_game_message(message)
 
     def write_message(self, message, binary=False):
         if DEVELOPMENT:
             info('Sent WS message: {}'.format(message))
         return super(PlayerController, self).write_message(message, binary)
 
+
+from grepopla.controllers.GameController import GameController
