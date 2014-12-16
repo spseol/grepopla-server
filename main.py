@@ -3,14 +3,14 @@ from os import path
 from pony.orm.core import db_session
 from tornado.web import StaticFileHandler, url, Application
 
-from grepopla.controllers.PlayerClient import PlayerClient
+from grepopla.controllers.PlayerController import PlayerController
 from grepopla.controllers.IndexController import IndexController
 from grepopla.settings import DEVELOPMENT
 
 
 app_params = [
     url(r'/', IndexController),
-    url(r'/game', PlayerClient),
+    url(r'/game', PlayerController),
     url(r'/static/(.*)', StaticFileHandler,
         {"path": ''.join((path.dirname(path.abspath(__file__)), '/../templates/index.html'))})
 ]

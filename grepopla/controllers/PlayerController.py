@@ -1,12 +1,12 @@
 from logging import warning
-import logging
 from random import randint
 from logging import info
 
-from pony.orm.core import commit, select
+from pony.orm.core import commit
 from tornado.escape import json_decode, to_basestring
 from tornado.websocket import WebSocketHandler
 
+from grepopla.controllers.GameController import GameController
 from grepopla.model.entity import Player, Game
 from datetime import datetime
 from grepopla.settings import DEVELOPMENT
@@ -18,17 +18,19 @@ MODE_GAME = 'game'
 MODES = (MODE_LOGIN, MODE_SELECT, MODE_GAME)
 
 
-class PlayerClient(WebSocketHandler):
+class PlayerController(WebSocketHandler):
     def __init__(self, application, request, **kwargs):
-        super(PlayerClient, self).__init__(application, request, **kwargs)
+        super(PlayerController, self).__init__(application, request, **kwargs)
         self.player = None
         self.game = None
+        self.game_controller = None
         self.mode = MODE_LOGIN
         self.toggle_message_mode(MODE_LOGIN)
 
     def open(self):
         self.set_nodelay(True)
-        info('new WS')
+        if DEVELOPMENT:
+            info('new WS')
 
     def on_close(self):
         if not self.mode == MODE_GAME:
@@ -36,12 +38,6 @@ class PlayerClient(WebSocketHandler):
         warning(u'Player {} in game {} disconnected ({})'.format(to_basestring(self.player.nick), self.game.id,
                                                                  self.close_code))
         commit()
-        for ship in select(
-                game_object for game_object in self.player.game_objects if game_object.game_object_type == "Ship"):
-            print(ship.id)
-            # destroy all players ships
-            # set to free all player's planets
-        self.game.players.remove(self.player)
 
     def on_message(self, message):
         raise NotImplementedError
@@ -92,8 +88,6 @@ class PlayerClient(WebSocketHandler):
             self.on_message = self._on_game_message
         elif mode in (MODE_SELECT, MODE_LOGIN):
             self.on_message = self._on_command_message
-        else:
-            warning('Unknown game mode!')
 
     def _on_command_message(self, message):
         message = json_decode(message)
@@ -109,6 +103,8 @@ class PlayerClient(WebSocketHandler):
                 self.set_game(game_id=int(message.get('game_id', 0)))
                 self.mode = MODE_GAME
                 self.toggle_message_mode(MODE_GAME)
+                self.game_controller = GameController(self.player, self.game)
+                GameController.clients.append(self)
             else:
                 warning('Unknown command!')
         except RuntimeWarning as e:
@@ -117,10 +113,13 @@ class PlayerClient(WebSocketHandler):
     def _on_game_message(self, message):
         assert isinstance(self.player, Player)
         assert isinstance(self.game, Game)
-        info('GM (player {} in game {}): {}'.format(to_basestring(self.player.nick), self.game.id, message))
+        if DEVELOPMENT:
+            info('Game message (player {} in game {}): {}'.format(to_basestring(self.player.nick), self.game.id,
+                                                                  message))
+        GameController.process_game_message(message)
 
     def write_message(self, message, binary=False):
         if DEVELOPMENT:
-            logging.info('Sent WS message: {}'.format(message))
-        return super(PlayerClient, self).write_message(message, binary)
+            info('Sent WS message: {}'.format(message))
+        return super(PlayerController, self).write_message(message, binary)
 
