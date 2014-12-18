@@ -2,7 +2,7 @@
 
 _optional_, **for both directions**, g = game, p = player
 
-### Pre-game stage
+## Pre-game stage
 | to client from server | to server from client |
 | :-- | --: |
 |  | command: login, nick: foobar |
@@ -12,15 +12,30 @@ _optional_, **for both directions**, g = game, p = player
 |  | command: select, game_id: 2 |
 | _error: 1002_ | |
 
-### Pre-start stage
+## Pre-start stage
 | to client from server | to server from client |
 | :-- | --: |
 | **command: player\_ready, player\_id: 3** | |
 | **command: player\_add, p\_id: 3, g\_id: 2, p\_color: #abcdef** | |
 | command: start, time: 10 | |
-| set: planet, values: {id: 1, x: 1024, y: 512, owner_id: 6} ||
+| command: set, entity: planet, values: {id: 1, x: 1024, y: 512, owner_id: 6} | |
 
+## Game stage
+| to client from server | to server from client |
+| :-- | --: |
+| command: action, entity: ship, id: 6, values: {params for this action} | |
 
+## ship actions
+##### set
+any of the parameters to set (x, y, hp) 
+##### follow
+ship want follow another enemy ship - following_id
+##### disfollow
+ship want stop actually following
+##### move
+ship want move to abs. position - x, y (maybe be used before recycling)
+##### recycle
+recycle to planet - planet_id
 
 
 ### error codes & messages
