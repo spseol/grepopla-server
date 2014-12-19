@@ -18,12 +18,12 @@ _optional_, **for both directions**, g = game, p = player
 | **command: player\_ready, player\_id: 3** | |
 | **command: player\_add, p\_id: 3, g\_id: 2, p\_color: #abcdef** | |
 | command: start, time: 10 | |
-| command: init, entity: planet, values: {id: 1, x: 1024, y: 512, owner_id: 6, size: (0, 10, int)} | |
+| command: init, entity: Planet, values: {id: 1, x: 1024, y: 512, owner_id: 6, size: (0, 10, int)} | |
 
 ## Game stage
 | to client from server | to server from client |
 | :-- | --: |
-| command: action, entity: ship, id: 6, values: {params for this action} | |
+| command: action, entity: Ship, id: 6, values: {params for this action} | |
 
 ## ship actions
 ##### set
