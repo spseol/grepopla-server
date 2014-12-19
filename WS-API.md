@@ -24,7 +24,7 @@ _optional_, **for both directions**, g = game, p = player
 | to client from server | to server from client |
 | :-- | --: |
 | command: action, entity: Ship, id: 6, values: {params for this action} | |
-| command: action, action: capture entity: Planet, id: 6, capturer_id: 4 | |
+| command: action, entity: Planet, id: 6, values: {capturer_id: 3, action: capture, previous_owner_id: 33} | |
 
 ## ship actions
 ##### set
