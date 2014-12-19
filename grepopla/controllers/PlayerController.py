@@ -3,12 +3,12 @@ from random import randint
 from logging import info
 
 from pony.orm.core import commit
-from tornado.escape import json_decode, to_basestring
+from tornado.escape import json_decode, to_basestring, json_encode
 from tornado.websocket import WebSocketHandler
 
 from grepopla.model.entity import Player, Game
 from datetime import datetime
-from grepopla.settings import DEVELOPMENT
+from grepopla.settings import PRODUCTION
 
 
 MODE_LOGIN = 'login'
@@ -28,8 +28,8 @@ class PlayerController(WebSocketHandler):
 
     def open(self):
         self.set_nodelay(True)
-        if DEVELOPMENT:
-            info('new WS')
+        if not PRODUCTION:
+            info('new WS from {}'.format(self.request.remote_ip))
 
     def on_close(self):
         if not self.mode == MODE_GAME:
@@ -104,7 +104,10 @@ class PlayerController(WebSocketHandler):
                 self.toggle_message_mode(MODE_GAME)
 
                 self.game_controller = GameController(self, self.player, self.game)
-                GameController.clients.append(self)
+                if isinstance(GameController.clients.get(self.game.id, None), list):
+                    GameController.clients[self.game.id].append(self)
+                else:
+                    GameController.clients[self.game.id] = [self]
             else:
                 warning('Unknown command!')
         except RuntimeWarning as e:
@@ -115,14 +118,12 @@ class PlayerController(WebSocketHandler):
         assert isinstance(self.player, Player)
         assert isinstance(self.game, Game)
         assert isinstance(self.game_controller, GameController)
-        if DEVELOPMENT:
+        if not PRODUCTION:
             info('Game message (player {} in game {}): {}'.format(to_basestring(self.player.nick), self.game.id,
-                                                                  message))
+                                                                  to_basestring(json_encode(message))))
         self.game_controller.process_game_message(message)
 
     def write_message(self, message, binary=False):
-        if DEVELOPMENT:
-            info('Sent WS message: {}'.format(message))
         return super(PlayerController, self).write_message(message, binary)
 
 

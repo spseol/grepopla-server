@@ -5,7 +5,7 @@ from tornado.web import StaticFileHandler, url, Application
 
 from grepopla.controllers.PlayerController import PlayerController
 from grepopla.controllers.IndexController import IndexController
-from grepopla.settings import DEVELOPMENT
+from grepopla.settings import PRODUCTION
 
 
 app_params = [
@@ -14,8 +14,8 @@ app_params = [
     url(r'/static/(.*)', StaticFileHandler,
         {"path": ''.join((path.dirname(path.abspath(__file__)), '/grepopla/static/'))})
 ]
-app = Application(app_params, debug=DEVELOPMENT, compiled_template_cache=not DEVELOPMENT,
-                  static_hash_cache=not DEVELOPMENT)
+app = Application(app_params, debug=not PRODUCTION, compiled_template_cache=PRODUCTION,
+                  static_hash_cache=PRODUCTION)
 
 
 @db_session

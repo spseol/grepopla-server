@@ -31,12 +31,12 @@
                 game_id: $('input[name=game_id]').val()
             };
             msg = JSON.stringify(msg);
-            console.log(msg)
             ws.send(msg);
         });
         ws.onmessage = function (e) {
             var data = e.data;
-            $('div').text(data).prependTo('#logger');
+            console.log(data);
+            $('<span></span>').text(data).prependTo('#logger');
         }
     });
 </script>
