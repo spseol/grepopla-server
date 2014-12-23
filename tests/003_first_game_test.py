@@ -12,9 +12,11 @@ class Sockethandler(WebSocketHandler):
 
     def open(self):
         self.clients.append(self)
+        warning('WS opened!')
         self.init_test_game()
 
     def on_close(self):
+        warning('WS closed')
         self.clients.remove(self)
 
     def on_message(self, message):
@@ -30,7 +32,6 @@ class Sockethandler(WebSocketHandler):
         messages = (player1, player2, planet1, planet2, ship1, ship2)
         for msg in messages:
             self.write_message(msg)
-
 
     def _get_new_entity(self, entity, owner_id):
         self._id += 1
@@ -51,8 +52,13 @@ class Sockethandler(WebSocketHandler):
         return {
             'command': 'init',
             'entity': 'Player',
-            'id': self._id
+            'id': self._id,
+            'local': randint(0, 1000)
         }
+
+    def write_message(self, message, binary=False):
+        warning(str(message))
+        return super(Sockethandler, self).write_message(message, binary)
 
 
 application = tornado.web.Application([
