@@ -23,8 +23,8 @@ class Sockethandler(WebSocketHandler):
         warning('new msg {}'.format(message))
 
     def init_test_game(self):
-        player1 = self._get_new_player()
-        player2 = self._get_new_player()
+        player1 = self._get_new_player(2)
+        player2 = self._get_new_player(1)
         planet1 = self._get_new_entity('Planet', player1['id'])
         planet2 = self._get_new_entity('Planet', player2['id'])
         ship1 = self._get_new_entity('Ship', player1['id'])
@@ -47,13 +47,13 @@ class Sockethandler(WebSocketHandler):
             }
         }
 
-    def _get_new_player(self):
+    def _get_new_player(self, enemy_id):
         self._id += 1
         return {
             'command': 'init',
             'entity': 'Player',
             'id': self._id,
-            'local': randint(0, 1000)
+            'enemy_id': enemy_id
         }
 
     def write_message(self, message, binary=False):
