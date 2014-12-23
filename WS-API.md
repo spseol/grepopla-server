@@ -16,7 +16,7 @@ _optional_, **for both directions**, g = game, p = player
 | to client from server | to server from client |
 | :-- | --: |
 | **command: player\_ready, player\_id: 3** | |
-| **command: player\_add, p\_id: 3, g\_id: 2, p\_color: #abcdef** | |
+| **command: player\_add, id: 3, game_id: 2, color: #abcdef** | |
 | command: start, time: 10 | |
 | command: init, entity: Planet, values: {id: 1, x: 1024, y: 512, owner_id: 6, size: (0, 10, int)} | |
 
