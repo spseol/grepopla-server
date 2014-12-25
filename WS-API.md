@@ -27,6 +27,8 @@ _optional_, **for both directions**, g = game, p = player
 | command: action, entity: Planet, id: 6, values: {capturer_id: 3, action: capture, previous_owner_id: 33} | |
 
 ## ship actions
+##### init
+creating new ship
 ##### set
 any of the parameters to set (x, y, hp) 
 ##### follow
