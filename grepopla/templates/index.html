@@ -36,7 +36,7 @@
         ws.onmessage = function (e) {
             var data = e.data;
             console.log(data);
-            $('<span></span>').text(data).prependTo('#logger');
+            $('<div></div>').text(data).prependTo('#logger');
         }
     });
 </script>

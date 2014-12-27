@@ -68,6 +68,10 @@ class GameController(object):
             # destroy all players ships
             # set to free all player's planets
         self.game.players.remove(client.player)
+        if not self.game.players:
+            self.game.closed_at = datetime.now()
+            info('Closing game {} with {} players'.format(self.game.id, len(self.game.players )))
+        commit()
         self.clients[self.game.id].remove(self.player_controller)
 
     def get_other_clients(self):
