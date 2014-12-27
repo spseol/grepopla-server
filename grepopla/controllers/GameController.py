@@ -1,3 +1,4 @@
+from collections import defaultdict
 from math import cos, sin
 from logging import warning, info
 from math import pi
@@ -13,7 +14,7 @@ from grepopla.settings import GAME_WIDTH, GAME_HEIGHT
 
 
 class GameController(object):
-    clients = {}
+    clients = defaultdict(list)
 
     def __init__(self, player_controller, player, game):
         assert isinstance(player, Player)
@@ -39,8 +40,8 @@ class GameController(object):
         step = 2 * pi / len(self.game.players)
         angle = 0
         for player in self.game.players:
-            x = int(center[0] + cos(angle) * 2.0 / 3 * GAME_WIDTH * 0.5)
-            y = int(center[0] + sin(angle) * 2.0 / 3 * GAME_HEIGHT * 0.5)
+            x = int(center[0] + cos(angle) * 2.0 / 3 * (GAME_WIDTH * 0.5))
+            y = int(center[0] + sin(angle) * 2.0 / 3 * (GAME_HEIGHT * 0.5))
             size = randint(1, 10)
             angle += step
             planet = Planet(x=x, y=y, player=player, game=self.game, size=size)
@@ -59,7 +60,6 @@ class GameController(object):
                 }
             }
             self.write_to_clients(init_msg)
-
 
     def on_close(self, client):
         # for ship in select(

@@ -1,14 +1,15 @@
+from hashlib import md5
 from logging import warning
 from random import randint
 from logging import info
+from datetime import datetime
 
-from pony.orm.core import commit
 from tornado.escape import json_decode, to_basestring, json_encode
 from tornado.websocket import WebSocketHandler
 
+from pony.orm.core import commit
 from grepopla.model.entity import Player, Game
-from datetime import datetime
-from grepopla.settings import PRODUCTION
+from grepopla.settings import PRODUCTION, SKIP_AUTHENTICATION
 
 
 MODE_LOGIN = 'login'
@@ -30,10 +31,22 @@ class PlayerController(WebSocketHandler):
         self.set_nodelay(True)
         if not PRODUCTION:
             info('new WS from {}'.format(self.request.remote_ip))
+        if SKIP_AUTHENTICATION:
+            ip = self.request.remote_ip
+            nick = md5(ip).hexdigest()[:10]
+            game_select = self.get_game_select()
+            game_id = game_select['games'][0]['id']
+
+            self.set_player(nick, ip)
+            self.set_game(game_id=game_id)
+            self.toggle_message_mode(MODE_GAME)
+            self.set_game_controller()
 
     def on_close(self):
         if not self.mode == MODE_GAME:
             return
+        assert isinstance(self.game_controller, GameController)
+        self.game_controller.on_close(self)
         warning(u'Player {} in game {} disconnected ({})'.format(to_basestring(self.player.nick), self.game.id,
                                                                  self.close_code))
         commit()
@@ -65,24 +78,28 @@ class PlayerController(WebSocketHandler):
         commit()
         info(u'Player {} logged in game {}!'.format(to_basestring(self.player.nick), str(self.game.id)))
 
-    def write_game_select(self):
+    def set_game_controller(self):
+        self.game_controller = GameController(self, self.player, self.game)
+        GameController.clients[self.game.id].append(self)
+
+    def get_game_select(self):
         assert isinstance(self.player, Player)
-        games = Game.select(lambda g: g.closed_at is None and g.launched_at is None).count()
-        if not games:
+        games = Game.select(lambda g: g.closed_at is None and g.launched_at is None)
+        if not games.count():
             g = Game()
             g.created_at = datetime.now()
             info(u'Creating new game with id {}.'.format(g))
-        commit()
-        games = Game.select(lambda g: g.closed_at is None and g.launched_at is None)
+            commit()
         games_select = {
             'games': [
                 {'id': game.id,
                  'players': [player.nick for player in game.players]}
                 for game in games]}
 
-        self.write_message(games_select)
+        return games_select
 
     def toggle_message_mode(self, mode):
+        self.mode = mode
         if mode == MODE_GAME:
             self.on_message = self._on_game_message
         elif mode in (MODE_SELECT, MODE_LOGIN):
@@ -90,24 +107,17 @@ class PlayerController(WebSocketHandler):
 
     def _on_command_message(self, message):
         message = json_decode(message)
-
         command = message.get('command', None)
         command = command if command in MODES else None
         try:
             if command == MODE_LOGIN and self.mode == MODE_LOGIN:
                 self.set_player(nick=message.get('nick', None), ip_address=self.request.remote_ip)
                 self.mode = MODE_SELECT
-                self.write_game_select()
+                self.write_message(self.get_game_select())
             elif command == MODE_SELECT and self.mode == MODE_SELECT:
                 self.set_game(game_id=int(message.get('game_id', 0)))
-                self.mode = MODE_GAME
                 self.toggle_message_mode(MODE_GAME)
-
-                self.game_controller = GameController(self, self.player, self.game)
-                if isinstance(GameController.clients.get(self.game.id, None), list):
-                    GameController.clients[self.game.id].append(self)
-                else:
-                    GameController.clients[self.game.id] = [self]
+                self.set_game_controller()
             else:
                 warning('Unknown command!')
         except RuntimeWarning as e:
