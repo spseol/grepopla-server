@@ -41,7 +41,8 @@ class Ship(db.GameObject):
 
 
 class Planet(db.GameObject):
-    pass
+    x = Required(int)
+    y = Required(int)
 
 
 class Command(db.Entity):
