@@ -1,6 +1,7 @@
+from datetime import datetime
+
 from pony.orm.core import PrimaryKey, Required, Optional, Set, Discriminator, sql_debug
 
-from datetime import datetime
 from grepopla.model.database import db
 from grepopla.settings import PRODUCTION
 
@@ -14,6 +15,7 @@ class GameObject(db.Entity):
     action = Optional(unicode)
     size = Required(int)
 
+
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     nick = Required(unicode, lazy=False)
@@ -22,6 +24,7 @@ class Player(db.Entity):
     games = Set("Game")
     game_objects = Set(GameObject)
     ip_address = Required(unicode)
+
 
 class Game(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -33,13 +36,13 @@ class Game(db.Entity):
     closed_at = Optional(datetime)
 
 
-class Ship(GameObject):
+class Ship(db.GameObject):
     pass
 
 
-class Planet(GameObject):
-    x = Required(int)
-    y = Required(int)
+class Planet(db.GameObject):
+    pass
+
 
 class Command(db.Entity):
     _table_ = "log"
