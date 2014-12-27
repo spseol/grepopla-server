@@ -11,7 +11,7 @@ class GameObject(db.Entity):
     game_object_type = Discriminator(str)
     id = PrimaryKey(int, auto=True)
     game = Required("Game")
-    player = Required("Player")
+    player = Optional("Player")
     action = Optional(unicode)
     size = Required(int)
 
@@ -36,13 +36,14 @@ class Game(db.Entity):
     closed_at = Optional(datetime)
 
 
-class Ship(db.GameObject):
+class Ship(GameObject):
     pass
 
 
-class Planet(db.GameObject):
+class Planet(GameObject):
     x = Required(int)
     y = Required(int)
+    is_free = Optional(int)
 
 
 class Command(db.Entity):

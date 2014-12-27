@@ -4,11 +4,11 @@ from logging import warning, info
 from math import pi
 from random import randint
 
-from pony.orm.core import commit
+from pony.orm.core import commit, select
 from tornado.escape import to_basestring, json_encode
 
 from datetime import datetime
-from grepopla.model.entity import Player, Game, Planet
+from grepopla.model.entity import Player, Game, Planet, GameObject
 from grepopla.settings import GAME_RESOLUTION, PRODUCTION
 from grepopla.settings import GAME_WIDTH, GAME_HEIGHT
 
@@ -62,15 +62,16 @@ class GameController(object):
             self.write_to_clients(init_msg)
 
     def on_close(self, client):
-        # for ship in select(
-        # game_object for game_object in client.player.game_objects if game_object.game_object_type == "Ship"):
-        #     print(ship.id)
-            # destroy all players ships
-            # set to free all player's planets
+        assert isinstance(client, PlayerController)
+        for planet in select(g_o for g_o in client.player.game_objects if g_o.game_object_type == "Planet"):
+            assert isinstance(planet, Planet)
+            planet.player = None
+            planet.is_free = True
+            warning('Planet {} setting to free.'.format(planet.id))
         self.game.players.remove(client.player)
         if not self.game.players:
             self.game.closed_at = datetime.now()
-            info('Closing game {} with {} players'.format(self.game.id, len(self.game.players )))
+            info('Closing game {}'.format(self.game.id))
         commit()
         self.clients[self.game.id].remove(self.player_controller)
 
