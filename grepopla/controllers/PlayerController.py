@@ -34,10 +34,10 @@ class PlayerController(WebSocketHandler):
         if SKIP_AUTHENTICATION:
             ip = self.request.remote_ip
             nick = md5(ip).hexdigest()[:10]
-            game_select = self.get_game_select()
-            game_id = game_select['games'][0]['id']
 
             self.set_player(nick, ip)
+            game_select = self.get_game_select()
+            game_id = game_select['games'][0]['id']
             self.set_game(game_id=game_id)
             self.toggle_message_mode(MODE_GAME)
             self.set_game_controller()
