@@ -64,7 +64,7 @@ class GameController(object):
     def on_close(self, client):
         assert isinstance(client, PlayerController)
         assert isinstance(client.player, Player)
-        for planet in select(g_o for g_o in self.player.game_objects if g_o.game_object_type == "Planet"):
+        for planet in GameObject.select(lambda g_o: g_o.player == self.player and g_o.game == self.game and g_o.game_object_type == "Planet")[:]:
             assert isinstance(planet, Planet)
             planet.player = None
             planet.is_free = True
