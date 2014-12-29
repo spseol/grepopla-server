@@ -1,4 +1,4 @@
-from logging import warning
+from logging import warning, info
 from random import randint
 
 import tornado.ioloop
@@ -6,7 +6,7 @@ import tornado.web
 from tornado.websocket import WebSocketHandler
 
 
-class Sockethandler(WebSocketHandler):
+class SocketHandler(WebSocketHandler):
     clients = []
     _id = 0
 
@@ -20,7 +20,11 @@ class Sockethandler(WebSocketHandler):
         self.clients.remove(self)
 
     def on_message(self, message):
-        warning('new msg {}'.format(message))
+        info('MSG: {}'.format(message))
+        for client in self.clients:
+            assert isinstance(client, SocketHandler)
+            client.write_message(message)
+
 
     def init_test_game(self):
         player1 = self._get_new_player(2)
@@ -58,11 +62,11 @@ class Sockethandler(WebSocketHandler):
 
     def write_message(self, message, binary=False):
         warning(str(message))
-        return super(Sockethandler, self).write_message(message, binary)
+        return super(SocketHandler, self).write_message(message, binary)
 
 
 application = tornado.web.Application([
-    (r"/", Sockethandler),
+    (r"/", SocketHandler),
 ])
 
 if __name__ == "__main__":
