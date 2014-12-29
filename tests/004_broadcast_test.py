@@ -39,9 +39,9 @@ class SocketHandler(WebSocketHandler):
         for cl in cls.clients:
             assert isinstance(cl, cls)
             player = cl.get_init_player_msg()
-            planet = cls._get_new_entity('Planet', player['id'])
-            ship = cls._get_new_entity('Ship', player['id'])
-            messages.extend((player, planet, ship))
+            ship1 = cls._get_new_entity('Ship', player['id'])
+            ship2 = cls._get_new_entity('Ship', player['id'])
+            messages.extend((player, ship1, ship2))
 
         for cl in cls.clients:
             assert isinstance(cl, cls)
@@ -59,8 +59,8 @@ class SocketHandler(WebSocketHandler):
             'id': cls._id,
             'owner_id': owner_id,
             'values': {
-                'x': randint(0, 800),
-                'y': randint(0, 400),
+                'x': randint(0, 400) if owner_id % 2 == 0 else randint(400, 800),
+                'y': randint(0, 400) if owner_id % 2 == 0 else randint(400, 800),
                 'size': 1
             }
         }
