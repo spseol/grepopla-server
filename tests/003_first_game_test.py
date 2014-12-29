@@ -9,7 +9,7 @@ from tornado.websocket import WebSocketHandler
 class SocketHandler(WebSocketHandler):
     clients = []
     _id = 0
-
+    messages = []
     def open(self):
         self.clients.append(self)
         warning('WS opened!')
