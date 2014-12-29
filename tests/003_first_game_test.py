@@ -13,7 +13,10 @@ class SocketHandler(WebSocketHandler):
     def open(self):
         self.clients.append(self)
         warning('WS opened!')
-        self.init_test_game()
+        if not self.messages:
+            self.init_init_messages()
+        for msg in self.messages:
+            self.write_message(msg)
 
     def on_close(self):
         warning('WS closed')
@@ -25,17 +28,14 @@ class SocketHandler(WebSocketHandler):
             assert isinstance(client, SocketHandler)
             client.write_message(message)
 
-
-    def init_test_game(self):
+    def init_init_messages(self):
         player1 = self._get_new_player(2)
         player2 = self._get_new_player(1)
         planet1 = self._get_new_entity('Planet', player1['id'])
         planet2 = self._get_new_entity('Planet', player2['id'])
         ship1 = self._get_new_entity('Ship', player1['id'])
         ship2 = self._get_new_entity('Ship', player2['id'])
-        messages = (player1, player2, planet1, planet2, ship1, ship2)
-        for msg in messages:
-            self.write_message(msg)
+        self.messages = (player1, player2, planet1, planet2, ship1, ship2)
 
     def _get_new_entity(self, entity, owner_id):
         self._id += 1
