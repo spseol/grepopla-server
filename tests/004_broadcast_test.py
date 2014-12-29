@@ -1,4 +1,4 @@
-from logging import warning, info
+from logging import warning
 from random import randint
 
 from tornado.escape import json_decode
@@ -23,7 +23,7 @@ class SocketHandler(WebSocketHandler):
         self.clients.remove(self)
 
     def on_message(self, message):
-        info('received {}'.format(message))
+        warning('received {}'.format(message))
         message = json_decode(message)
         nick = message.get('nick', None)
         if nick:
@@ -75,7 +75,7 @@ class SocketHandler(WebSocketHandler):
         }
 
     def write_message(self, message, binary=False):
-        info('sent {}'.format(message))
+        warning('sent {}'.format(message))
         return super(SocketHandler, self).write_message(message, binary)
 
 
