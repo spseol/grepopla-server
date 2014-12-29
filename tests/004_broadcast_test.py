@@ -10,8 +10,8 @@ from tornado.websocket import WebSocketHandler
 
 class SocketHandler(WebSocketHandler):
     clients = []
-    _id = 0
     messages = []
+    _id = 0
 
     def open(self):
         self.nick = None
@@ -38,8 +38,8 @@ class SocketHandler(WebSocketHandler):
         for cl in cls.clients:
             assert isinstance(cl, cls)
             player = cl.get_init_player_msg()
-            planet = cls._get_new_entity(cl, 'Planet', player['id'])
-            ship = cls._get_new_entity(cl, 'Ship', player['id'])
+            planet = cls._get_new_entity('Planet', player['id'])
+            ship = cls._get_new_entity('Ship', player['id'])
             messages.extend((player, planet, ship))
 
         for cl in cls.clients:
@@ -49,12 +49,13 @@ class SocketHandler(WebSocketHandler):
 
         return messages
 
-    def _get_new_entity(self, entity, owner_id):
-        self._id += 1
+    @classmethod
+    def _get_new_entity(cls, entity, owner_id):
+        cls._id += 1
         return {
             'command': 'init',
             'entity': str(entity),
-            'id': self._id,
+            'id': cls._id,
             'owner_id': owner_id,
             'values': {
                 'x': randint(0, 800),
