@@ -28,8 +28,6 @@ class GameController(object):
         self.write_to_clients(message)
         if message.get("command", None) == "request" and message.get("entity", None) == "Ship":
             self.init_new_ship()
-        if message['command'] == 'game' and message['nick'] == 'start':
-            self.pre_start()
 
     def init_new_ship(self):
         ship = Ship()
