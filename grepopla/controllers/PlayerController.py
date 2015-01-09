@@ -7,9 +7,9 @@ from datetime import datetime
 from tornado.escape import json_decode, to_basestring, json_encode
 from tornado.websocket import WebSocketHandler
 
-from pony.orm.core import commit
+from pony.orm.core import commit, exists
 from grepopla.model.entity import Player, Game
-from grepopla.settings import PRODUCTION, SKIP_AUTHENTICATION
+from grepopla.settings import PRODUCTION, SKIP_AUTHENTICATION, SKIP_GAME_SELECT
 
 
 MODE_LOGIN = 'login'
@@ -26,6 +26,7 @@ class PlayerController(WebSocketHandler):
         self.game_controller = None
         self.mode = MODE_LOGIN
         self.toggle_message_mode(MODE_LOGIN)
+        self.on_message = self.on_message
 
     def open(self):
         self.set_nodelay(True)
@@ -46,7 +47,7 @@ class PlayerController(WebSocketHandler):
         if not self.mode == MODE_GAME:
             return
         assert isinstance(self.game_controller, GameController)
-        self.game_controller.on_close(self)
+        self.game_controller.on_close()
         warning(u'Player {} in game {} disconnected ({})'.format(to_basestring(self.player.nick), self.game.id,
                                                                  self.close_code))
         commit()
@@ -58,12 +59,19 @@ class PlayerController(WebSocketHandler):
         p = Player.get(nick=nick, ip_address=ip_address)
         if not p:
             p = Player(nick=nick, ip_address=ip_address, color="%06x" % randint(0, 0xFFFFFF))
-        if p.games:
+        if Game.exists(lambda g: p in g.players and g.closed_at is None):
             self.write_message({'error': 1001})
-            raise RuntimeWarning
+            raise RuntimeWarning('Player is already in game.')
         self.player = p
         assert isinstance(self.player, Player)
         info(u'Player {} connected!'.format(to_basestring(self.player.nick)))
+
+    def force_set_game(self):
+        game_select = self.get_game_select()
+        game_id = game_select["games"][0]["id"]
+        self.set_game(game_id)
+        self.toggle_message_mode(MODE_GAME)
+        self.set_game_controller()
 
     def set_game(self, game_id):
         assert isinstance(self.player, Player)
@@ -71,7 +79,7 @@ class PlayerController(WebSocketHandler):
         assert isinstance(g, Game)
         if g.launched_at is not None:
             self.write_message({'error': 1002})
-            raise RuntimeWarning
+            raise RuntimeWarning('This game is already launched.')
         self.game = g
         assert isinstance(self.game, Game)
         self.game.players.add(self.player)
@@ -79,12 +87,14 @@ class PlayerController(WebSocketHandler):
         info(u'Player {} logged in game {}!'.format(to_basestring(self.player.nick), str(self.game.id)))
 
     def set_game_controller(self):
+        assert isinstance(self.player, Player)
+        assert isinstance(self.game, Game)
         self.game_controller = GameController(self, self.player, self.game)
         GameController.clients[self.game.id].append(self)
 
     def get_game_select(self):
         assert isinstance(self.player, Player)
-        games = Game.select(lambda g: g.closed_at is None and g.launched_at is None)
+        games = Game.select(lambda game: game.closed_at is None and game.launched_at is None)
         if not games.count():
             g = Game()
             g.created_at = datetime.now()
@@ -108,12 +118,17 @@ class PlayerController(WebSocketHandler):
     def _on_command_message(self, message):
         message = json_decode(message)
         command = message.get('command', None)
+        if message.get("nick", None):
+            command = MODE_LOGIN
         command = command if command in MODES else None
         try:
             if command == MODE_LOGIN and self.mode == MODE_LOGIN:
                 self.set_player(nick=message.get('nick', None), ip_address=self.request.remote_ip)
                 self.mode = MODE_SELECT
-                self.write_message(self.get_game_select())
+                if SKIP_GAME_SELECT:
+                    self.force_set_game()
+                else:
+                    self.write_message(self.get_game_select())
             elif command == MODE_SELECT and self.mode == MODE_SELECT:
                 self.set_game(game_id=int(message.get('game_id', 0)))
                 self.toggle_message_mode(MODE_GAME)

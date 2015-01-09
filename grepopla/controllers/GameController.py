@@ -8,7 +8,7 @@ from pony.orm.core import commit, select
 from tornado.escape import to_basestring, json_encode
 
 from datetime import datetime
-from grepopla.model.entity import Player, Game, Planet, GameObject
+from grepopla.model.entity import Player, Game, Planet, GameObject, Ship
 from grepopla.settings import GAME_RESOLUTION, PRODUCTION
 from grepopla.settings import GAME_WIDTH, GAME_HEIGHT
 
@@ -18,16 +18,37 @@ class GameController(object):
 
     def __init__(self, player_controller, player, game):
         assert isinstance(player, Player)
-        assert isinstance(game, Game)
-        assert isinstance(player_controller, PlayerController)
         self.player = player
+        assert isinstance(game, Game)
         self.game = game
+        assert isinstance(player_controller, PlayerController)
         self.player_controller = player_controller
 
     def process_game_message(self, message):
         self.write_to_clients(message)
+        if message.get("command", None) == "request" and message.get("entity", None) == "Ship":
+            self.init_new_ship()
         if message['command'] == 'game' and message['nick'] == 'start':
             self.pre_start()
+
+    def init_new_ship(self):
+        ship = Ship()
+        ship.player = self.player
+        ship.game = self.game
+        ship.size = 1
+        commit()
+        msg = {
+            'command': 'init',
+            'entity': "Ship",
+            'id': ship.id,
+            'owner_id': self.player.id,
+            'values': {
+                'x': randint(0, 400),
+                'y': randint(0, 400),
+                'size': 1
+            }
+        }
+        self.write_to_clients(msg)
 
     def pre_start(self):
         start_msg = {'command': 'start', 'time': '10'}
@@ -61,30 +82,29 @@ class GameController(object):
             }
             self.write_to_clients(init_msg)
 
-    def on_close(self, client):
-        assert isinstance(client, PlayerController)
-        assert isinstance(client.player, Player)
+    def on_close(self):
         for planet in GameObject.select(lambda g_o: g_o.player == self.player and g_o.game == self.game and g_o.game_object_type == "Planet")[:]:
             assert isinstance(planet, Planet)
             planet.player = None
-            planet.is_free = True
+            planet.is_free = 0
             warning('Planet {} setting to free.'.format(planet.id))
-        self.game.players.remove(client.player)
+        self.game.players.remove(self.player)
         if not self.game.players:
             self.game.closed_at = datetime.now()
             info('Closing game {}'.format(self.game.id))
         commit()
         self.clients[self.game.id].remove(self.player_controller)
 
-    def get_other_clients(self):
+    @property
+    def other_clients(self):
         clients = self.clients[self.game.id][:]
         clients.remove(self.player_controller)
         return clients
 
-    def write_to_clients(self, message, to_self=False):
+    def write_to_clients(self, message, to_self=True):
         if not PRODUCTION:
             info('To clients: {}'.format(json_encode(message)))
-        clients = self.clients[self.game.id] if not to_self else self.get_other_clients()
+        clients = self.clients[self.game.id] if not to_self else self.other_clients
         for cl in clients:
             cl.write_message(message)
 
